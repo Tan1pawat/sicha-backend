@@ -15,6 +15,7 @@ return new class extends Migration
             $table->increments('id');
 
             $table->string('name', 255)->charset('utf8');
+            $table->string('code', 255)->charset('utf8');
             $table->timestamps();
             $table->softDeletes();
         });

@@ -29,6 +29,14 @@ class BillController extends Controller
 
         $D = Bill::select($col);
 
+        if($request->has('prison_id') && $request->prison_id != null){
+            $D->where('prison_id', $request->prison_id);
+        }
+
+        if($request->has('company_id') && $request->company_id != null){
+            $D->where('company_id', $request->company_id);
+        }
+
         if ($orderby[$order[0]['column']]) {
             $D->orderby($orderby[$order[0]['column']], $order[0]['dir']);
         }
@@ -62,7 +70,7 @@ class BillController extends Controller
             foreach ($d as $item) {
                 $No++;
                 $item->No = $No;
-
+                $item->bill_type_name = $item->bill_type == 1 ? 'ใบเสร็จ' : 'ใบสั่งซื้อ';
                 $item->prison_name = $item->prison_id && isset($prisons[$item->prison_id]) ? $prisons[$item->prison_id] : 'Unknown Prison';
                 $item->company_name = $item->company_id && isset($companys[$item->company_id]) ? $companys[$item->company_id] : 'Unknown Company';
             }
@@ -137,5 +145,26 @@ class BillController extends Controller
             'sum_expense' => $sumExpense,
             'sum_total' => $sumIncome - $sumExpense,
         ];
+    }
+
+    public function destroy($id)
+    {
+        DB::beginTransaction();
+
+        try {
+
+            $Item = Bill::find($id);
+            $Item->delete();
+
+            DB::commit();
+
+            return $this->returnUpdate('ดำเนินการสำเร็จ');
+        } catch (\Throwable $e) {
+
+            DB::rollback();
+
+            return $this->returnErrorData('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง ' . $e, 404);
+        }
+    
     }
 }

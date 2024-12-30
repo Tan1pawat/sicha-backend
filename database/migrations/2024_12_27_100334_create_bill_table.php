@@ -27,6 +27,10 @@ return new class extends Migration
             $table->decimal('sum_expense', 10, 2);
             $table->decimal('sum_total', 10, 2);
 
+            $table->text('sender_address')->nullable()->charset('utf8');
+            $table->text('sender_tax_number')->nullable()->charset('utf8');
+            $table->text('receiver_address')->nullable()->charset('utf8');
+            $table->text('receiver_tax_number')->nullable()->charset('utf8');
             $table->timestamps();
             $table->softDeletes();
         });

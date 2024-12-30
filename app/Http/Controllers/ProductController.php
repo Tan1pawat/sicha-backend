@@ -12,16 +12,19 @@ class ProductController extends Controller
 {
     public function getList()
     {
-        $Item = Product::get()->toarray();
-
-        if (!empty($Item)) {
-
-            for ($i = 0; $i < count($Item); $i++) {
-                $Item[$i]['No'] = $i + 1;
+        $items = Product::all(); // Keep it as a collection
+    
+        if ($items->isNotEmpty()) {
+            $unitIds = $items->pluck('unit_id')->filter()->unique();
+            $units = Unit::whereIn('id', $unitIds)->pluck('name', 'id');
+    
+            foreach ($items as $index => $item) {
+                $item['No'] = $index + 1;
+                $item['name_unit'] = $item['name'] . ' (' . ($units[$item['unit_id']] ?? 'N/A') . ')';
             }
         }
-
-        return $this->returnSuccess('เรียกดูข้อมูลสำเร็จ', $Item);
+    
+        return $this->returnSuccess('เรียกดูข้อมูลสำเร็จ', $items);
     }
     /**
      * Display a listing of the resource.
@@ -155,7 +158,7 @@ class ProductController extends Controller
             $Item->price = $request->price;
             $Item->value = $request->value;
             $Item->code = "SI-". ($lastId + 1);
-            $Item->image = $request->image ?? "/public/files/default.jpg";
+            $Item->image = $request->image ?? "/files/default.jpg";
             $Item->unit_id= $request->unit_id;
             $Item->product_type_id= $request->product_type_id;
             

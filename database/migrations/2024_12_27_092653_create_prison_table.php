@@ -15,6 +15,8 @@ return new class extends Migration
             $table->increments('id');
 
             $table->string('name', 255)->charset('utf8');
+            $table->text('receiver_address')->nullable()->charset('utf8');
+            $table->text('receiver_tax_number')->nullable()->charset('utf8');
             $table->timestamps();
             $table->softDeletes();
         });

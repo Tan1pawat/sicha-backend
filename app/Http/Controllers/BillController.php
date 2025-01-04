@@ -23,9 +23,9 @@ class BillController extends Controller
         $page = $start / $length + 1;
 
 
-        $col = array('id', 'prison_id', 'company_id','code','bill_type', 'date', 'sum_income', 'sum_expense', 'sum_total');
+        $col = array('id', 'prison_id', 'company_id','code', 'date', 'sum_income', 'sum_expense', 'sum_total');
 
-        $orderby = array('id', 'prison_id', 'company_id','code','bill_type', 'date', 'sum_income', 'sum_expense', 'sum_total');
+        $orderby = array('id', 'prison_id', 'company_id','code', 'date', 'sum_income', 'sum_expense', 'sum_total');
 
         $D = Bill::select($col);
 
@@ -70,7 +70,6 @@ class BillController extends Controller
             foreach ($d as $item) {
                 $No++;
                 $item->No = $No;
-                $item->bill_type_name = $item->bill_type == 1 ? 'ใบเสร็จ' : 'ใบสั่งซื้อ';
                 $item->prison_name = $item->prison_id && isset($prisons[$item->prison_id]) ? $prisons[$item->prison_id] : 'Unknown Prison';
                 $item->company_name = $item->company_id && isset($companys[$item->company_id]) ? $companys[$item->company_id] : 'Unknown Company';
             }
@@ -85,41 +84,51 @@ class BillController extends Controller
         $validatedData = $request->validate([
             'prison_id' => 'required|integer',
             'company_id' => 'required|integer',
-            'bill_type' => 'required|integer',
             'bill_order' => 'required|array',
             'date' => 'required|string',
         ], [
             'required' => 'กรุณาระบุ :attribute ให้เรียบร้อย',
         ]);
-
+    
         DB::beginTransaction();
-
+    
         try {
+            $dateParts = explode('/', $validatedData['date']);
+            $thaiYear = $dateParts[2];
+            $lastTwoDigits = substr($thaiYear, -2);
+    
+            // Calculate the current count based on the year and company
+            $currentCount = Bill::where('company_id', $validatedData['company_id'])
+                ->whereYear(DB::raw("STR_TO_DATE(date, '%d/%m/%Y')"), $thaiYear)
+                ->max('count') ?? 0;
+    
             // Create a new bill
-            $lastId = Bill::max('id') ?? 0;
+            $company = Company::find($validatedData['company_id']);
             $bill = Bill::create([
                 'prison_id' => $validatedData['prison_id'],
                 'company_id' => $validatedData['company_id'],
-                'bill_type' => $validatedData['bill_type'],
-                'code' => 'BILL-' . ($lastId + 1),
+                'code' => $company->code . $lastTwoDigits . '-' . ($currentCount + 1),
                 'date' => $validatedData['date'],
                 'sum_income' => 0,
                 'sum_expense' => 0,
                 'sum_total' => 0,
+                'count' => $currentCount + 1
             ]);
-
+    
             $totals = $this->createBillOrder($validatedData['bill_order'], $bill->id);
-
+    
             $bill->update($totals);
-
+    
             DB::commit();
-
+    
             return $this->returnSuccess('ดำเนินการสำเร็จ', $bill);
         } catch (\Exception $e) {
             DB::rollback();
-            return $this->returnErrorData('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง '.$e, 500);
+            return $this->returnErrorData('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง ' . $e->getMessage(), 500);
         }
     }
+    
+    
 
     private function createBillOrder(array $billOrders, int $billId): array
     {
@@ -135,6 +144,9 @@ class BillController extends Controller
                 'price' => $item['price'],
                 'value' => $item['value'],
             ]);
+
+            $product->value -= $item['value'];
+            $product->save();
 
             $sumIncome += $item['price'] * $item['value'];
             $sumExpense += $product->price * $item['value'];

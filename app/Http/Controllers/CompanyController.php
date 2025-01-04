@@ -34,6 +34,9 @@ class CompanyController extends Controller
 
             $Item = new Company();
             $Item->name = $request->name;
+            $Item->code = $request->code;
+            $Item->sender_address = $request->sender_address;
+            $Item->sender_tax_number = $request->sender_tax_number;
             
             $Item->save();
 

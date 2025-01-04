@@ -20,4 +20,14 @@ class BillOrder extends Model
         'price',
         'value',
     ];
+
+    public function bill()
+    {
+        return $this->belongsTo(Bill::class);
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
 }

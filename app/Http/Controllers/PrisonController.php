@@ -37,6 +37,8 @@ class PrisonController extends Controller
 
             $Item = new Prison();
             $Item->name = $request->name;
+            $Item->receiver_address = $request->receiver_address;
+            $Item->receiver_tax_number = $request->receiver_tax_number;
             
             $Item->save();
 

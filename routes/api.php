@@ -7,6 +7,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductTypeController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\PrisonController;
+use App\Http\Controllers\ExcelController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,9 @@ Route::resource('company', CompanyController::class);
 //bill
 Route::resource('bill', BillController::class);
 Route::post('/bill_page', [BillController::class, 'getPage']);
+
+//excel
+Route::get('/export_bill/{id}', [ExcelController::class, 'generateInvoice']);
 
 //general
 Route::post('/upload_product_image',[Controller::class,'uploadProductImage']);

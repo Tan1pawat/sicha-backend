@@ -17,11 +17,16 @@ class Bill extends Model
     protected $fillable = [
         'prison_id',
         'company_id',
-        'bill_type',
         'date',
         'code',
         'sum_income',
         'sum_expense',
-        'sum_total'
+        'sum_total',
+        'count',
     ];
+
+    public function billOrders()
+    {
+        return $this->hasMany(BillOrder::class);
+    }
 }

@@ -15,4 +15,9 @@ class Product extends Model
     protected $softDelete = true;
 
     protected $hidden = ['deleted_at'];
+
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
+    }
 }

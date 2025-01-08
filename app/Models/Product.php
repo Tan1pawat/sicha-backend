@@ -20,4 +20,8 @@ class Product extends Model
     {
         return $this->belongsTo(Unit::class);
     }
+    public function productType()
+    {
+        return $this->belongsTo(ProductType::class);
+    }
 }

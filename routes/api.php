@@ -3,6 +3,7 @@
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductTypeController;
 use App\Http\Controllers\UnitController;
@@ -35,9 +36,14 @@ Route::resource('company', CompanyController::class);
 //bill
 Route::resource('bill', BillController::class);
 Route::post('/bill_page', [BillController::class, 'getPage']);
+Route::post('/update_bill/{id}', [BillController::class, 'updatebill']);
+Route::get('/get_bill/{id}', [BillController::class, 'gettAll']);
 
 //excel
 Route::get('/export_bill/{id}', [ExcelController::class, 'generateInvoice']);
+Route::get('/export_order/{id}', [ExcelController::class, 'generateOrder']);
 
+//dashboard
+Route::post('/dashboard', [DashboardController::class, 'getDashboard']);
 //general
 Route::post('/upload_product_image',[Controller::class,'uploadProductImage']);

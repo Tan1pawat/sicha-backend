@@ -23,17 +23,17 @@ class BillController extends Controller
         $page = $start / $length + 1;
 
 
-        $col = array('id', 'prison_id', 'company_id','code', 'date', 'sum_income', 'sum_expense', 'sum_total');
+        $col = array('id', 'prison_id', 'company_id', 'code', 'date', 'sum_income', 'sum_expense', 'sum_total');
 
-        $orderby = array('id', 'prison_id', 'company_id','code', 'date', 'sum_income', 'sum_expense', 'sum_total');
+        $orderby = array('id', 'prison_id', 'company_id', 'code', 'date', 'sum_income', 'sum_expense', 'sum_total');
 
         $D = Bill::select($col);
 
-        if($request->has('prison_id') && $request->prison_id != null){
+        if ($request->has('prison_id') && $request->prison_id != null) {
             $D->where('prison_id', $request->prison_id);
         }
 
-        if($request->has('company_id') && $request->company_id != null){
+        if ($request->has('company_id') && $request->company_id != null) {
             $D->where('company_id', $request->company_id);
         }
 
@@ -51,7 +51,6 @@ class BillController extends Controller
                         $query->orWhere($c, 'like', '%' . $search['value'] . '%');
                     }
                 });
-
             });
         }
 
@@ -63,7 +62,7 @@ class BillController extends Controller
 
             $prisonIds = $d->pluck('prison_id')->filter()->unique();
             $companyIds = $d->pluck('company_id')->filter()->unique();
-    
+
             $prisons = Prison::whereIn('id', $prisonIds)->pluck('name', 'id');
             $companys = Company::whereIn('id', $companyIds)->pluck('name', 'id');
 
@@ -73,7 +72,6 @@ class BillController extends Controller
                 $item->prison_name = $item->prison_id && isset($prisons[$item->prison_id]) ? $prisons[$item->prison_id] : 'Unknown Prison';
                 $item->company_name = $item->company_id && isset($companys[$item->company_id]) ? $companys[$item->company_id] : 'Unknown Company';
             }
-
         }
 
         return $this->returnSuccess('เรียกดูข้อมูลสำเร็จ', $d);
@@ -89,19 +87,19 @@ class BillController extends Controller
         ], [
             'required' => 'กรุณาระบุ :attribute ให้เรียบร้อย',
         ]);
-    
+
         DB::beginTransaction();
-    
+
         try {
             $dateParts = explode('/', $validatedData['date']);
             $thaiYear = $dateParts[2];
             $lastTwoDigits = substr($thaiYear, -2);
-    
+
             // Calculate the current count based on the year and company
             $currentCount = Bill::where('company_id', $validatedData['company_id'])
                 ->whereYear(DB::raw("STR_TO_DATE(date, '%d/%m/%Y')"), $thaiYear)
                 ->max('count') ?? 0;
-    
+
             // Create a new bill
             $company = Company::find($validatedData['company_id']);
             $bill = Bill::create([
@@ -114,21 +112,20 @@ class BillController extends Controller
                 'sum_total' => 0,
                 'count' => $currentCount + 1
             ]);
-    
+
             $totals = $this->createBillOrder($validatedData['bill_order'], $bill->id);
-    
+
             $bill->update($totals);
-    
+
             DB::commit();
-    
+
             return $this->returnSuccess('ดำเนินการสำเร็จ', $bill);
         } catch (\Exception $e) {
             DB::rollback();
             return $this->returnErrorData('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง ' . $e->getMessage(), 500);
         }
     }
-    
-    
+
 
     private function createBillOrder(array $billOrders, int $billId): array
     {
@@ -159,6 +156,66 @@ class BillController extends Controller
         ];
     }
 
+    public function updatebill(Request $request, $id)
+    {
+        // Validate request inputs
+        $validatedData = $request->validate([
+            'prison_id' => 'required|integer',
+            'company_id' => 'required|integer',
+            'bill_order' => 'required|array',
+            'date' => 'required|string',
+        ], [
+            'required' => 'กรุณาระบุ :attribute ให้เรียบร้อย',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            // Find the existing bill
+            $bill = Bill::findOrFail($id);
+
+            // Update bill fields
+            $bill->update([
+                'prison_id' => $validatedData['prison_id'],
+                'company_id' => $validatedData['company_id'],
+                'date' => $validatedData['date'],
+            ]);
+
+            // Revert previous orders
+            $this->revertBillOrder($bill->id);
+
+            // Create new or update orders
+            $totals = $this->createBillOrder($validatedData['bill_order'], $bill->id);
+
+            // Update totals in the bill
+            $bill->update($totals);
+
+            DB::commit();
+
+            return $this->returnSuccess('อัปเดตสำเร็จ', $bill);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return $this->returnErrorData('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง ' . $e->getMessage(), 500);
+        }
+    }
+
+
+    private function revertBillOrder(int $billId)
+    {
+        $billOrders = BillOrder::where('bill_id', $billId)->get();
+
+        foreach ($billOrders as $order) {
+            $product = Product::find($order->product_id);
+            if ($product) {
+                $product->value += $order->value;
+                $product->save();
+            }
+
+            // Delete the order
+            $order->delete();
+        }
+    }
+
     public function destroy($id)
     {
         DB::beginTransaction();
@@ -177,6 +234,11 @@ class BillController extends Controller
 
             return $this->returnErrorData('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง ' . $e, 404);
         }
-    
+    }
+
+    public function gettAll($id)
+    {
+        $data = Bill::with('billOrders.product')->find($id);
+        return $this->returnSuccess('เรียกดูข้อมูลสำเร็จ', $data);
     }
 }

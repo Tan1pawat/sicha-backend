@@ -13,17 +13,17 @@ class ProductController extends Controller
     public function getList()
     {
         $items = Product::all(); // Keep it as a collection
-    
+
         if ($items->isNotEmpty()) {
             $unitIds = $items->pluck('unit_id')->filter()->unique();
             $units = Unit::whereIn('id', $unitIds)->pluck('name', 'id');
-    
+
             foreach ($items as $index => $item) {
                 $item['No'] = $index + 1;
                 $item['name_unit'] = $item['name'] . ' (' . ($units[$item['unit_id']] ?? 'N/A') . ')';
             }
         }
-    
+
         return $this->returnSuccess('เรียกดูข้อมูลสำเร็จ', $items);
     }
     /**
@@ -41,9 +41,9 @@ class ProductController extends Controller
         $page = $start / $length + 1;
 
 
-        $col = array('id', 'name', 'code','price','value', 'image', 'unit_id', 'product_type_id', 'created_at', 'updated_at');
+        $col = array('id', 'name', 'code', 'price', 'value', 'image', 'unit_id', 'product_type_id', 'created_at', 'updated_at');
 
-        $orderby = array('id', 'name', 'code','price' ,'value', 'image', 'unit_id', 'product_type_id', 'created_at', 'updated_at');
+        $orderby = array('id', 'name', 'code', 'price', 'value', 'image', 'unit_id', 'product_type_id', 'created_at', 'updated_at');
 
         $D = Product::select($col);
 
@@ -61,7 +61,6 @@ class ProductController extends Controller
                         $query->orWhere($c, 'like', '%' . $search['value'] . '%');
                     }
                 });
-
             });
         }
 
@@ -74,21 +73,20 @@ class ProductController extends Controller
             // Get all related units and product types in one query
             $unitIds = $d->pluck('unit_id')->filter()->unique(); // Filter out null or missing unit_id
             $productTypeIds = $d->pluck('product_type_id')->filter()->unique(); // Filter out null or missing product_type_id
-    
+
             $units = Unit::whereIn('id', $unitIds)->pluck('name', 'id');
             $productTypes = ProductType::whereIn('id', $productTypeIds)->pluck('name', 'id');
-    
+
             foreach ($d as $item) {
                 $No++;
                 $item->No = $No;
-    
+
                 // Handle null or missing unit_id and product_type_id
                 $item->unit_name = $item->unit_id && isset($units[$item->unit_id]) ? $units[$item->unit_id] : 'Unknown Unit';
-                $item->product_type_name = $item->product_type_id && isset($productTypes[$item->product_type_id]) 
-                    ? $productTypes[$item->product_type_id] 
+                $item->product_type_name = $item->product_type_id && isset($productTypes[$item->product_type_id])
+                    ? $productTypes[$item->product_type_id]
                     : 'Unknown Product Type';
             }
-
         }
 
         return $this->returnSuccess('เรียกดูข้อมูลสำเร็จ', $d);
@@ -96,21 +94,21 @@ class ProductController extends Controller
 
     public function searchData(Request $request)
     {
-        try{
+        try {
             $key = $request->input('key');
-            $Item = Product::where('name','like',"%{$key}%")
-            ->limit(20)
-            ->get()->toarray();
-    
+            $Item = Product::where('name', 'like', "%{$key}%")
+                ->limit(20)
+                ->get()->toarray();
+
             if (!empty($Item)) {
-    
+
                 for ($i = 0; $i < count($Item); $i++) {
                     $Item[$i]['No'] = $i + 1;
                 }
             }
-    
+
             return $this->returnSuccess('เรียกดูข้อมูลสำเร็จ', $Item);
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             return $this->returnErrorData($e->getMessage(), 404);
         }
     }
@@ -140,12 +138,11 @@ class ProductController extends Controller
 
         if (!isset($request->name)) {
             return $this->returnErrorData('กรุณาระบุ ชื่อ ให้เรียบร้อย', 404);
-        }else if(!isset($request->unit_id)){
+        } else if (!isset($request->unit_id)) {
             return $this->returnErrorData('กรุณาระบุ หน่วย ให้เรียบร้อย', 404);
-        }else if (!isset($request->product_type_id)) {
+        } else if (!isset($request->product_type_id)) {
             return $this->returnErrorData('กรุณาระบุ ชนิดสินค้า ให้เรียบร้อย', 404);
-        }
-        else
+        } else
 
             DB::beginTransaction();
 
@@ -157,11 +154,11 @@ class ProductController extends Controller
             $Item->name = $request->name;
             $Item->price = $request->price;
             $Item->value = $request->value;
-            $Item->code = "SI-". ($lastId + 1);
+            $Item->code = "SI-" . ($lastId + 1);
             $Item->image = $request->image ?? "/files/default.jpg";
-            $Item->unit_id= $request->unit_id;
-            $Item->product_type_id= $request->product_type_id;
-            
+            $Item->unit_id = $request->unit_id;
+            $Item->product_type_id = $request->product_type_id;
+
             $Item->save();
 
             DB::commit();
@@ -215,25 +212,27 @@ class ProductController extends Controller
 
         if (!isset($request->name)) {
             return $this->returnErrorData('กรุณาระบุ ชื่อ ให้เรียบร้อย', 404);
-        }else if(!isset($request->unit_id)){
+        } else if (!isset($request->unit_id)) {
             return $this->returnErrorData('กรุณาระบุ หน่วย ให้เรียบร้อย', 404);
-        }else if (!isset($request->product_type_id)) {
+        } else if (!isset($request->product_type_id)) {
             return $this->returnErrorData('กรุณาระบุ ชนิดสินค้า ให้เรียบร้อย', 404);
-        }
-        else
+        } else
 
             DB::beginTransaction();
 
         try {
             $Item = Product::find($id);
+
+            $Item->image = $request->image;
+
             $Item->name = $request->name;
             $Item->price = $request->price;
-            $Item->unit_id= $request->unit_id;
+            $Item->unit_id = $request->unit_id;
             $Item->product_type_id = $request->product_type_id;
             $Item->value = $request->value;
-            
+
             $Item->save();
-            
+
             DB::commit();
 
             return $this->returnSuccess('ดำเนินการสำเร็จ', $Item);
@@ -269,6 +268,5 @@ class ProductController extends Controller
 
             return $this->returnErrorData('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง ' . $e, 404);
         }
-    
     }
 }

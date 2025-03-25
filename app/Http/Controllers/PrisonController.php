@@ -20,9 +20,9 @@ class PrisonController extends Controller
         $page = $start / $length + 1;
 
 
-        $col = array('id', 'receiver_address', 'receiver_tax_number');
+        $col = array('id','name', 'receiver_address', 'receiver_tax_number');
 
-        $orderby = array('id', 'receiver_address', 'receiver_tax_number');
+        $orderby = array('id','name', 'receiver_address', 'receiver_tax_number');
 
         $D = Prison::select($col);
 

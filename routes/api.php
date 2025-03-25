@@ -31,6 +31,7 @@ Route::resource('prison', PrisonController::class);
 
 //company
 Route::get('/get_company', [CompanyController::class, 'getList']);
+Route::post('/company_page', [CompanyController::class, 'getPage']);
 Route::resource('company', CompanyController::class);
 
 //bill

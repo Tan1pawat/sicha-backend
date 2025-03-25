@@ -27,6 +27,7 @@ Route::resource('unit', UnitController::class);
 
 //prison
 Route::get('/get_prison', [PrisonController::class, 'getList']);
+Route::post('/prison_page', [PrisonController::class, 'getPage']);
 Route::resource('prison', PrisonController::class);
 
 //company
